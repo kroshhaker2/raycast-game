@@ -63,6 +63,8 @@
 
               # Formatting
               nixfmt
+
+              sdl3
             ];
 
             shellHook = ''
