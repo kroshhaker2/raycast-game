@@ -1,7 +1,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_timer.h>
 
 #include "framebuffer.h"
+#include "player.h"
 #include "raycast.h"
 #include "renderer.h"
 
@@ -44,6 +46,7 @@ int main(int argc, char *argv[]) {
 
     Framebuffer fb(640, 360);
     Renderer renderer;
+    Player player;
 
     if (!renderer.init(device, window, fb.width(), fb.height())) {
         SDL_Log("Renderer initialization failed");
@@ -55,14 +58,38 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    Raycast raycast(fb);
+    Raycast raycast(fb, player);
+
+    Uint64 previous = SDL_GetPerformanceCounter();
 
     while (running) {
+        Uint64 current = SDL_GetPerformanceCounter();
+
+        float deltaTime = static_cast<float>(current - previous) /
+                          SDL_GetPerformanceFrequency();
+
+        previous = current;
+
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
+            switch (event.type) {
+            case SDL_EVENT_QUIT:
                 running = false;
+                break;
+
+            case SDL_EVENT_KEY_DOWN:
+                player.handleKeyDown(event.key.scancode);
+                break;
+
+            case SDL_EVENT_KEY_UP:
+                player.handleKeyUp(event.key.scancode);
+                break;
+
+            default:
+                break;
             }
         }
+
+        player.update(deltaTime);
 
         fb.clear(0xFF'00'00'00);
 

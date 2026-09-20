@@ -1,11 +1,9 @@
 #pragma once
 
 #include "framebuffer.h"
+#include "player.h"
 
-enum class Side {
-  X,
-  Y
-};
+enum class Side { X, Y };
 
 struct Vec2 {
     float x;
@@ -26,7 +24,7 @@ struct Hit {
 
 class Raycast {
   public:
-    Raycast(Framebuffer &framebuffer);
+    Raycast(Framebuffer &framebuffer, const Player &player);
 
     void renderFrame();
 
@@ -34,6 +32,7 @@ class Raycast {
 
   private:
     Framebuffer &framebuffer_;
+    const Player &player_;
     // const Map &map_;
 
     Hit castRay(Vec2 start, Vec2 direction);
