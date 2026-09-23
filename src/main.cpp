@@ -78,10 +78,31 @@ int main(int argc, char *argv[]) {
 
             case SDL_EVENT_KEY_DOWN:
                 player.handleKeyDown(event.key.scancode);
+                if (event.key.scancode == SDL_SCANCODE_ESCAPE) {
+                    if (!SDL_SetWindowRelativeMouseMode(window, false)) {
+                        SDL_Log("Mouse release failed: %s", SDL_GetError());
+                    }
+                } else {
+                    player.handleKeyDown(event.key.scancode);
+                }
                 break;
 
             case SDL_EVENT_KEY_UP:
                 player.handleKeyUp(event.key.scancode);
+                break;
+
+            case SDL_EVENT_MOUSE_MOTION:
+                if (SDL_GetWindowRelativeMouseMode(window)) {
+                    player.handleMouseMotion(event.motion.xrel);
+                }
+                break;
+
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                if (event.button.button == SDL_BUTTON_LEFT) {
+                    if (!SDL_SetWindowRelativeMouseMode(window, true)) {
+                        SDL_Log("Mouse capture failed: %s", SDL_GetError());
+                    }
+                }
                 break;
 
             default:
