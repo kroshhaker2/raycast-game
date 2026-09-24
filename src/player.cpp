@@ -1,5 +1,6 @@
 #include "player.h"
 
+#include <SDL3/SDL_scancode.h>
 #include <cmath>
 #include <numbers>
 
@@ -19,6 +20,10 @@ void Player::handleKeyDown(SDL_Scancode key) {
 
     case SDL_SCANCODE_D:
         strafeRight_ = true;
+        break;
+
+    case SDL_SCANCODE_SPACE:
+        space_ = true;
         break;
 
     default:
@@ -42,6 +47,10 @@ void Player::handleKeyUp(SDL_Scancode key) {
 
     case SDL_SCANCODE_D:
         strafeRight_ = false;
+        break;
+
+    case SDL_SCANCODE_SPACE:
+        space_ = false;
         break;
 
     default:
@@ -71,6 +80,19 @@ void Player::update(float deltaTime) {
     float movement = step(forwardInput, moveSpeed_, deltaTime);
     float strafeMovement = step(strafeInput, strafeSpeed_, deltaTime);
 
+    float jumpImpulse = 0.0f;
+
+    if (z_ <= 0.0f && space_) {
+        jumpImpulse = 3.0f;
+    }
+
+    z_ += gravity(jumpImpulse, verticalSpeed_, 9.81f, deltaTime);
+
+    if (z_ <= 0.0f) {
+        z_ = 0.0f;
+        verticalSpeed_ = 0.0f;
+    }
+
     x_ += directionX * movement;
     y_ += directionY * movement;
 
@@ -93,8 +115,24 @@ float Player::step(float input, float &speed, float deltaTime) {
     return speed * deltaTime;
 }
 
+float Player::gravity(float input, float &speed, float gravityAcceleration,
+                      float deltaTime) {
+    if (input > 0.0f) {
+        speed = input;
+    }
+
+    float movement =
+        speed * deltaTime - 0.5f * gravityAcceleration * deltaTime * deltaTime;
+
+    speed -= gravityAcceleration * deltaTime;
+
+    return movement;
+}
+
 float Player::x() const { return x_; }
 
 float Player::y() const { return y_; }
+
+float Player::z() const { return z_; }
 
 float Player::yaw() const { return yaw_; }

@@ -5,6 +5,12 @@
 
 enum class Side { X, Y };
 
+struct Vec3 {
+    float x;
+    float y;
+    float z;
+};
+
 struct Vec2 {
     float x;
     float y;
@@ -34,6 +40,8 @@ class Raycast {
     Framebuffer &framebuffer_;
     const Player &player_;
     // const Map &map_;
+
+    std::vector<uint32_t> texture[8];
 
     Hit castRay(Vec2 start, Vec2 direction);
 };
