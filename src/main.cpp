@@ -42,6 +42,27 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Let the game loop control the FPS limit instead of the display refresh.
+    SDL_GPUPresentMode presentMode = SDL_GPU_PRESENTMODE_VSYNC;
+    if (SDL_WindowSupportsGPUPresentMode(device, window,
+                                        SDL_GPU_PRESENTMODE_MAILBOX)) {
+        presentMode = SDL_GPU_PRESENTMODE_MAILBOX;
+    } else if (SDL_WindowSupportsGPUPresentMode(device, window,
+                                               SDL_GPU_PRESENTMODE_IMMEDIATE)) {
+        presentMode = SDL_GPU_PRESENTMODE_IMMEDIATE;
+    }
+
+    if (presentMode == SDL_GPU_PRESENTMODE_VSYNC) {
+        SDL_Log("Only VSync is supported; disabling the FPS cap may still "
+                "leave a display refresh limit");
+    } else if (!SDL_SetGPUSwapchainParameters(
+                   device, window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                   presentMode)) {
+        SDL_Log("Cannot disable VSync: %s", SDL_GetError());
+    }
+
+    constexpr Uint64 targetFrameNs = 1'000'000'000 / 60;
+    bool fpsLimitEnabled = true;
     bool running = true;
     SDL_Event event;
 
@@ -67,6 +88,7 @@ int main(int argc, char *argv[]) {
     Uint64 previous = SDL_GetPerformanceCounter();
 
     while (running) {
+        Uint64 frameStart = SDL_GetTicksNS();
         Uint64 current = SDL_GetPerformanceCounter();
 
         float deltaTime = static_cast<float>(current - previous) /
@@ -81,7 +103,21 @@ int main(int argc, char *argv[]) {
                 break;
 
             case SDL_EVENT_KEY_DOWN:
-                if (event.key.scancode == SDL_SCANCODE_F11) {
+                if (event.key.scancode == SDL_SCANCODE_F2) {
+                    if (!event.key.repeat) {
+                        raycast.toggleTextures();
+                    }
+                } else if (event.key.scancode == SDL_SCANCODE_F3) {
+                    if (!event.key.repeat) {
+                        raycast.toggleShading();
+                    }
+                } else if (event.key.scancode == SDL_SCANCODE_F4) {
+                    if (!event.key.repeat) {
+                        fpsLimitEnabled = !fpsLimitEnabled;
+                        SDL_Log("FPS limit: %s",
+                                fpsLimitEnabled ? "240" : "off");
+                    }
+                } else if (event.key.scancode == SDL_SCANCODE_F11) {
                     if (!event.key.repeat) {
                         bool fullscreen =
                             (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
@@ -128,6 +164,13 @@ int main(int argc, char *argv[]) {
         raycast.renderFrame();
 
         renderer.draw(window, fb);
+
+        if (fpsLimitEnabled && running) {
+            Uint64 elapsed = SDL_GetTicksNS() - frameStart;
+            if (elapsed < targetFrameNs) {
+                SDL_DelayPrecise(targetFrameNs - elapsed);
+            }
+        }
     }
 
     renderer.shutdown();

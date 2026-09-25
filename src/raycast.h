@@ -37,12 +37,17 @@ class Raycast {
 
     void renderFrame();
 
+    void toggleTextures();
+    void toggleShading();
+
     // explicit Raycast(const Map& map);
 
   private:
     Framebuffer &framebuffer_;
     const Player &player_;
     const Textures &textures_;
+    bool texturesEnabled_ = true;
+    bool shadingEnabled_ = true;
     // const Map &map_;
 
     Hit castRay(Vec2 start, Vec2 direction);
