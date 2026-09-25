@@ -5,13 +5,10 @@
 #include <cstdint>
 #include <cstdlib>
 
-#define texWidth 64
-#define texHeight 64
+constexpr int MAP_WIDTH = 24;
+constexpr int MAP_HEIGHT = 24;
 
-constexpr int MAP_WIDTH = 31;
-constexpr int MAP_HEIGHT = 25;
-
-int worldMap[MAP_WIDTH][MAP_HEIGHT] = {
+int worldMap[MAP_HEIGHT][MAP_WIDTH] = {
     {4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 7, 7, 7},
     {4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7},
     {4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7},
@@ -44,36 +41,9 @@ constexpr float FOV = 75.0f * M_PI / 180.0f;
 constexpr float wallHeight = 1.0f;
 constexpr float eyeHeight = 0.5f;
 
-Raycast::Raycast(Framebuffer &framebuffer, const Player &player)
-    : framebuffer_(framebuffer), player_(player) {
-    for (auto &tex : texture) {
-        tex.resize(texWidth * texHeight);
-    }
-    // generate some textures
-    for (int x = 0; x < texWidth; x++)
-        for (int y = 0; y < texHeight; y++) {
-            int xorcolor = (x * 256 / texWidth) ^ (y * 256 / texHeight);
-            // int xcolor = x * 256 / texWidth;
-            int ycolor = y * 256 / texHeight;
-            int xycolor = y * 128 / texHeight + x * 128 / texWidth;
-            texture[0][texWidth * y + x] =
-                65536 * 254 *
-                (x != y &&
-                 x != texWidth - y); // flat red texture with black cross
-            texture[1][texWidth * y + x] =
-                xycolor + 256 * xycolor + 65536 * xycolor; // sloped greyscale
-            texture[2][texWidth * y + x] =
-                256 * xycolor + 65536 * xycolor; // sloped yellow gradient
-            texture[3][texWidth * y + x] =
-                xorcolor + 256 * xorcolor + 65536 * xorcolor; // xor greyscale
-            texture[4][texWidth * y + x] = 256 * xorcolor;    // xor green
-            texture[5][texWidth * y + x] =
-                65536 * 192 * (x % 16 && y % 16);          // red bricks
-            texture[6][texWidth * y + x] = 65536 * ycolor; // red gradient
-            texture[7][texWidth * y + x] =
-                128 + 256 * 128 + 65536 * 128; // flat grey texture
-        }
-}
+Raycast::Raycast(Framebuffer &framebuffer, const Player &player,
+                 const Textures &textures)
+    : framebuffer_(framebuffer), player_(player), textures_(textures) {}
 
 void Raycast::renderFrame() {
     Vec3 player = {player_.x(), player_.y(), player_.z()};
@@ -98,58 +68,60 @@ void Raycast::renderFrame() {
 
         Hit hit = castRay({player.x, player.y}, rayDirection);
 
-        if (!hit.hit)
+        if (!hit.hit || hit.distance <= 0.0001f)
             continue;
 
         float brightness =
             std::max(0.15f, 1.0f / (1.0f + hit.distance * 0.15f));
 
-        std::uint32_t color = 0xFF'80'80'80;
-
-        std::uint8_t r = (color >> 0) & 0xFF;
-        std::uint8_t g = (color >> 8) & 0xFF;
-        std::uint8_t b = (color >> 16) & 0xFF;
-
-        r *= brightness;
-        g *= brightness;
-        b *= brightness;
-
-        std::uint32_t shaded = (0xFFu << 24) |
-                               (static_cast<std::uint32_t>(b) << 16) |
-                               (static_cast<std::uint32_t>(g) << 8) |
-                               static_cast<std::uint32_t>(r);
-
-        int lineHeight = static_cast<int>(height / hit.distance);
-
         float projectionScale = width / (2.0f * std::tan(FOV / 2.0f));
-
         float wallTop = height / 2.0f -
-                        (wallHeight - player_.z()) * projectionScale / hit.distance;
-
+                        (wallHeight - cameraZ) * projectionScale / hit.distance;
         float wallBottom =
             height / 2.0f + cameraZ * projectionScale / hit.distance;
 
-        if (wallTop < 0)
-            wallTop = 0;
+        int drawStart = static_cast<int>(std::ceil(
+            std::clamp(wallTop - 0.5f, 0.0f, static_cast<float>(height))));
+        int drawEnd = static_cast<int>(std::ceil(
+            std::clamp(wallBottom - 0.5f, 0.0f, static_cast<float>(height))));
 
-        if (wallBottom >= height)
-            wallBottom = height - 1;
+        float wallX = hit.side == Side::X ? hit.position.y : hit.position.x;
+        wallX -= std::floor(wallX);
 
-        for (int y = wallTop; y < wallBottom; y++) {
-            pixels[y * width + x] = shaded;
+        int texX = static_cast<int>(wallX * float(textures_.texWidth));
+        if (hit.side == Side::X && rayDirection.x > 0)
+            texX = textures_.texWidth - texX - 1;
+        if (hit.side == Side::Y && rayDirection.y < 0)
+            texX = textures_.texWidth - texX - 1;
+
+        float shade = brightness * (hit.side == Side::Y ? 0.5f : 1.0f);
+        for (int y = drawStart; y < drawEnd; y++) {
+            float v = (y + 0.5f - wallTop) / (wallBottom - wallTop);
+            int texY =
+                std::clamp(static_cast<int>(v * textures_.texHeight), 0, textures_.texHeight - 1);
+            std::uint32_t color = textures_.texture[hit.texNum][textures_.texWidth * texY + texX];
+            auto r = static_cast<std::uint32_t>((color & 0xFFu) * shade);
+            auto g = static_cast<std::uint32_t>(((color >> 8) & 0xFFu) * shade);
+            auto b =
+                static_cast<std::uint32_t>(((color >> 16) & 0xFFu) * shade);
+            pixels[y * width + x] = 0xFF000000u | (b << 16) | (g << 8) | r;
         }
     }
 }
 
 Hit Raycast::castRay(Vec2 start, Vec2 direction) {
-    Cell mapPos = {static_cast<int>(start.x), static_cast<int>(start.y)};
+    Cell mapPos = {static_cast<int>(std::floor(start.x)),
+                   static_cast<int>(std::floor(start.y))};
+    if (mapPos.x < 0 || mapPos.x >= MAP_WIDTH || mapPos.y < 0 ||
+        mapPos.y >= MAP_HEIGHT || (direction.x == 0.0f && direction.y == 0.0f))
+        return {};
     Cell step;
 
     Vec2 deltaDist = {std::abs(1 / direction.x), std::abs(1 / direction.y)};
     Vec2 sideDist;
 
     bool hit = false;
-    Side side;
+    Side side = Side::X;
 
     if (direction.x < 0) {
         step.x = -1;
@@ -183,10 +155,13 @@ Hit Raycast::castRay(Vec2 start, Vec2 direction) {
 
             distance = sideDist.y - deltaDist.y;
         }
-        if (distance > VIEW_DISTANCE)
-            break;
+        if (distance > VIEW_DISTANCE || mapPos.x < 0 || mapPos.x >= MAP_WIDTH ||
+            mapPos.y < 0 || mapPos.y >= MAP_HEIGHT)
+            return {};
         if (worldMap[mapPos.y][mapPos.x] > 0)
             hit = true;
     }
-    return {hit, distance, side, sideDist};
+    Vec2 position = {start.x + distance * direction.x,
+                     start.y + distance * direction.y};
+    return {hit, distance, side, position, worldMap[mapPos.y][mapPos.x] - 1};
 }

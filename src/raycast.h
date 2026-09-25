@@ -2,6 +2,7 @@
 
 #include "framebuffer.h"
 #include "player.h"
+#include "textures.h"
 
 enum class Side { X, Y };
 
@@ -26,11 +27,13 @@ struct Hit {
     float distance;
     Side side;
     Vec2 position;
+    int texNum;
 };
 
 class Raycast {
   public:
-    Raycast(Framebuffer &framebuffer, const Player &player);
+    Raycast(Framebuffer &framebuffer, const Player &player,
+            const Textures &textures);
 
     void renderFrame();
 
@@ -39,9 +42,8 @@ class Raycast {
   private:
     Framebuffer &framebuffer_;
     const Player &player_;
+    const Textures &textures_;
     // const Map &map_;
-
-    std::vector<uint32_t> texture[8];
 
     Hit castRay(Vec2 start, Vec2 direction);
 };

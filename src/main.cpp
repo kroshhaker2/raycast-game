@@ -6,6 +6,7 @@
 #include "player.h"
 #include "raycast.h"
 #include "renderer.h"
+#include "textures.h"
 
 int main(int argc, char *argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -46,7 +47,10 @@ int main(int argc, char *argv[]) {
 
     Framebuffer fb(640, 360);
     Renderer renderer;
+    Textures textures;
     Player player;
+
+    textures.loadTextures();
 
     if (!renderer.init(device, window, fb.width(), fb.height())) {
         SDL_Log("Renderer initialization failed");
@@ -58,7 +62,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    Raycast raycast(fb, player);
+    Raycast raycast(fb, player, textures);
 
     Uint64 previous = SDL_GetPerformanceCounter();
 
@@ -77,8 +81,15 @@ int main(int argc, char *argv[]) {
                 break;
 
             case SDL_EVENT_KEY_DOWN:
-                player.handleKeyDown(event.key.scancode);
-                if (event.key.scancode == SDL_SCANCODE_ESCAPE) {
+                if (event.key.scancode == SDL_SCANCODE_F11) {
+                    if (!event.key.repeat) {
+                        bool fullscreen =
+                            (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+                        if (!SDL_SetWindowFullscreen(window, !fullscreen)) {
+                            SDL_Log("Fullscreen toggle failed: %s", SDL_GetError());
+                        }
+                    }
+                } else if (event.key.scancode == SDL_SCANCODE_ESCAPE) {
                     if (!SDL_SetWindowRelativeMouseMode(window, false)) {
                         SDL_Log("Mouse release failed: %s", SDL_GetError());
                     }

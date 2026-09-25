@@ -33,7 +33,7 @@ class Player {
 
     float strafeSpeed_ = 2.5f;
 
-    float verticalSpeed_;
+    float verticalSpeed_ = 0.0f;
 
     float rotationSpeed_ = 2.5f;
 

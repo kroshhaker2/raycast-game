@@ -19,6 +19,7 @@ add_executable(rayfps
     src/renderer.cpp
     src/raycast.cpp
     src/player.cpp
+    src/textures.cpp
 )
 
 target_link_libraries(rayfps PRIVATE
