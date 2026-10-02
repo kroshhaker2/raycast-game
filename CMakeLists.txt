@@ -15,6 +15,7 @@ find_package(SDL3 REQUIRED CONFIG)
 
 add_executable(rayfps
     src/main.cpp
+    src/game.cpp
     src/framebuffer.cpp
     src/renderer.cpp
     src/raycast.cpp
