@@ -45,19 +45,19 @@ int main(int argc, char *argv[]) {
     // Let the game loop control the FPS limit instead of the display refresh.
     SDL_GPUPresentMode presentMode = SDL_GPU_PRESENTMODE_VSYNC;
     if (SDL_WindowSupportsGPUPresentMode(device, window,
-                                        SDL_GPU_PRESENTMODE_MAILBOX)) {
+                                         SDL_GPU_PRESENTMODE_MAILBOX)) {
         presentMode = SDL_GPU_PRESENTMODE_MAILBOX;
-    } else if (SDL_WindowSupportsGPUPresentMode(device, window,
-                                               SDL_GPU_PRESENTMODE_IMMEDIATE)) {
+    } else if (SDL_WindowSupportsGPUPresentMode(
+                   device, window, SDL_GPU_PRESENTMODE_IMMEDIATE)) {
         presentMode = SDL_GPU_PRESENTMODE_IMMEDIATE;
     }
 
     if (presentMode == SDL_GPU_PRESENTMODE_VSYNC) {
         SDL_Log("Only VSync is supported; disabling the FPS cap may still "
                 "leave a display refresh limit");
-    } else if (!SDL_SetGPUSwapchainParameters(
-                   device, window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-                   presentMode)) {
+    } else if (!SDL_SetGPUSwapchainParameters(device, window,
+                                              SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                                              presentMode)) {
         SDL_Log("Cannot disable VSync: %s", SDL_GetError());
     }
 
@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
     Renderer renderer;
     Textures textures;
     Player player;
+    Map map;
 
     textures.loadTextures();
 
@@ -83,7 +84,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    Raycast raycast(fb, player, textures);
+    map.load("assets/maps/level2.map");
+
+    Raycast raycast(fb, player, textures, map);
 
     Uint64 previous = SDL_GetPerformanceCounter();
 
@@ -119,10 +122,11 @@ int main(int argc, char *argv[]) {
                     }
                 } else if (event.key.scancode == SDL_SCANCODE_F11) {
                     if (!event.key.repeat) {
-                        bool fullscreen =
-                            (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+                        bool fullscreen = (SDL_GetWindowFlags(window) &
+                                           SDL_WINDOW_FULLSCREEN) != 0;
                         if (!SDL_SetWindowFullscreen(window, !fullscreen)) {
-                            SDL_Log("Fullscreen toggle failed: %s", SDL_GetError());
+                            SDL_Log("Fullscreen toggle failed: %s",
+                                    SDL_GetError());
                         }
                     }
                 } else if (event.key.scancode == SDL_SCANCODE_ESCAPE) {

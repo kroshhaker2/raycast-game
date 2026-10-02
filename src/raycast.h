@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framebuffer.h"
+#include "map.h"
 #include "player.h"
 #include "textures.h"
 
@@ -33,7 +34,7 @@ struct Hit {
 class Raycast {
   public:
     Raycast(Framebuffer &framebuffer, const Player &player,
-            const Textures &textures);
+            const Textures &textures, const Map &map);
 
     void renderFrame();
 
@@ -46,9 +47,9 @@ class Raycast {
     Framebuffer &framebuffer_;
     const Player &player_;
     const Textures &textures_;
+    const Map &map_;
     bool texturesEnabled_ = true;
     bool shadingEnabled_ = true;
-    // const Map &map_;
 
     Hit castRay(Vec2 start, Vec2 direction);
 };

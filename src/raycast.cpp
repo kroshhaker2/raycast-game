@@ -5,35 +5,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-constexpr int MAP_WIDTH = 24;
-constexpr int MAP_HEIGHT = 24;
-
-int worldMap[MAP_WIDTH][MAP_HEIGHT] = {
-    {8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 6, 4, 4, 6, 4, 6, 4, 4, 4, 6},
-    {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-    {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-    {8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-    {8, 0, 3, 3, 0, 0, 0, 0, 0, 8, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
-    {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 4, 6},
-    {8, 8, 8, 8, 0, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 6, 0, 0, 0, 0, 0, 6},
-    {7, 7, 7, 7, 0, 7, 7, 7, 7, 0, 8, 0, 8, 0, 8, 0, 8, 4, 0, 4, 0, 6, 0, 6},
-    {7, 7, 0, 0, 0, 0, 0, 0, 7, 8, 0, 8, 0, 8, 0, 8, 8, 6, 0, 0, 0, 0, 0, 6},
-    {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 0, 0, 0, 0, 4},
-    {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 6, 0, 6, 0, 6},
-    {7, 7, 0, 0, 0, 0, 0, 0, 7, 8, 0, 8, 0, 8, 0, 8, 8, 6, 4, 6, 0, 6, 6, 6},
-    {7, 7, 7, 7, 0, 7, 7, 7, 7, 8, 8, 4, 0, 6, 8, 4, 8, 3, 3, 3, 0, 3, 3, 3},
-    {2, 2, 2, 2, 0, 2, 2, 2, 2, 4, 6, 4, 0, 0, 6, 0, 6, 3, 0, 0, 0, 0, 0, 3},
-    {2, 2, 0, 0, 0, 0, 0, 2, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3},
-    {2, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 3},
-    {1, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 4, 4, 4, 6, 0, 6, 3, 3, 0, 0, 0, 3, 3},
-    {2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 2, 2, 2, 6, 6, 0, 0, 5, 0, 5, 0, 5},
-    {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
-    {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
-    {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5},
-    {2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5},
-    {2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5}};
-
 constexpr float TILE_SIZE = 64.0f;
 constexpr float VIEW_DISTANCE = 128.0f;
 constexpr float FOV = 75.0f * M_PI / 180.0f;
@@ -42,8 +13,9 @@ constexpr float wallHeight = 1.0f;
 constexpr float eyeHeight = 0.5f;
 
 Raycast::Raycast(Framebuffer &framebuffer, const Player &player,
-                 const Textures &textures)
-    : framebuffer_(framebuffer), player_(player), textures_(textures) {}
+                 const Textures &textures, const Map &map)
+    : framebuffer_(framebuffer), player_(player), textures_(textures),
+      map_(map) {}
 
 void Raycast::renderFrame() {
     Vec3 player = {player_.x(), player_.y(), player_.z()};
@@ -103,8 +75,9 @@ void Raycast::renderFrame() {
                                   textures_.texHeight - 1);
             std::uint32_t color = 0xFF808080u;
             if (texturesEnabled_) {
-                color = textures_.texture[hit.texNum]
-                                         [textures_.texWidth * texY + texX];
+                color =
+                    textures_
+                        .texture[hit.texNum][textures_.texWidth * texY + texX];
             }
             auto r = static_cast<std::uint32_t>((color & 0xFFu) * shade);
             auto g = static_cast<std::uint32_t>(((color >> 8) & 0xFFu) * shade);
@@ -122,8 +95,9 @@ void Raycast::toggleShading() { shadingEnabled_ = !shadingEnabled_; }
 Hit Raycast::castRay(Vec2 start, Vec2 direction) {
     Cell mapPos = {static_cast<int>(std::floor(start.x)),
                    static_cast<int>(std::floor(start.y))};
-    if (mapPos.x < 0 || mapPos.x >= MAP_WIDTH || mapPos.y < 0 ||
-        mapPos.y >= MAP_HEIGHT || (direction.x == 0.0f && direction.y == 0.0f))
+    if (mapPos.x < 0 || mapPos.x >= map_.width() || mapPos.y < 0 ||
+        mapPos.y >= map_.height() ||
+        (direction.x == 0.0f && direction.y == 0.0f))
         return {};
     Cell step;
 
@@ -165,13 +139,14 @@ Hit Raycast::castRay(Vec2 start, Vec2 direction) {
 
             distance = sideDist.y - deltaDist.y;
         }
-        if (distance > VIEW_DISTANCE || mapPos.x < 0 || mapPos.x >= MAP_WIDTH ||
-            mapPos.y < 0 || mapPos.y >= MAP_HEIGHT)
+        if (distance > VIEW_DISTANCE || mapPos.x < 0 ||
+            mapPos.x >= map_.width() || mapPos.y < 0 ||
+            mapPos.y >= map_.height())
             return {};
-        if (worldMap[mapPos.y][mapPos.x] > 0)
+        if (map_.isWall(mapPos.x, mapPos.y))
             hit = true;
     }
     Vec2 position = {start.x + distance * direction.x,
                      start.y + distance * direction.y};
-    return {hit, distance, side, position, worldMap[mapPos.y][mapPos.x] - 1};
+    return {hit, distance, side, position, map_.tile(mapPos.x, mapPos.y) - 1};
 }
